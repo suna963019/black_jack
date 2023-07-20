@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>black_jack</title>
+    <style>
+        #contents {
+            width: 700px;
+            border: 5px solid rgb(239, 184, 73);
+            background-color: rgb(34, 114, 34);
+            border-radius: 6px;
+            margin: auto;
+            padding: 50px;
+            position: relative;
+        }
+
+        #point_box {
+            display: block;
+            height: 100px;
+            width: 600px;
+        }
+
+        #point_box p {
+            text-align: center;
+            font-size: 30px;
+        }
+
+        #next_box {
+            height: 50px;
+        }
+
+        #button_box {
+            margin: 20px;
+            padding: 0 120px;
+        }
+
+        button {
+            font-size: 30px;
+            margin: 0 20px;
+            border-radius: 12px;
+        }
+
+        #dearer_card {
+            display: flex;
+            justify-content: center;
+        }
+
+        #my_card {
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            height: 120px;
+            width: 90px;
+            border: 3px solid;
+            text-align: center;
+            margin: 10px;
+            font-size: 30px;
+            line-height: 60px;
+            border-radius: 6px;
+            background-color: rgb(251, 252, 244);
+        }
+
+        #check_win {
+            position: absolute;
+            left: 250px;
+            top: 150px;
+            font-size: 100px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="contents">
+        <p id="check_win"></p>
+        <div id="dearer_card">
+
+        </div>
+        <div id="point_box">
+            <p><span id="point"></span> point</p>
+        </div>
+        <div id="next_box">
+            <button id="next">next</button>
+        </div>
+        <div id="button_box">
+            <button id="double">Double</button>
+            <button id="hit">Hit</button>
+            <button id="stand">Stand</button>
+        </div>
+        <div id="my_card">
+
+        </div>
+    </div>
+    <script>
+        'use strict';
+
+        let cardList = [];
+        let cardCheck = [];
+        let cardKinds = 0;
+        let cardNum;
+
+        let myCardNum = 0;
+        let dearerCardNum = 0;
+
+        let playerCardsPointArray = [];
+        let dearerCardsPointArray = [];
+
+        let moveCheck = true;
+
+        let point = 100;
+        let pointReturn = 0;
+        //buttonのonclick
+        const next = document.querySelector("#next");
+        next.onclick = function () {
+            set();
+        }
+
+        const double = document.querySelector("#double");
+        double.onclick = function () {
+            if (moveCheck) {
+                pointReturn = 20;
+                HandOutCard();
+                dearerStart();
+            }
+        }
+
+        const hit = document.querySelector("#hit");
+        hit.onclick = function () {
+            if (moveCheck) {
+                HandOutCard();
+            }
+        }
+
+        const stand = document.querySelector("#stand");
+        stand.onclick = function () {
+            if (moveCheck) {
+                dearerStart();
+            }
+        }
+
+        set();
+        function set() {
+            pointReturn = 10;
+            cardList = [];
+            cardCheck = [];
+            cardKinds = 0;
+            cardNum;
+            for (let i = 1; i < 53; i++) {
+                if ((i - 1) % 13 === 0) {
+                    cardKinds++;
+                }
+                cardNum = i % 13 + 1;
+                cardList.push([cardKinds, cardNum]);
+                cardCheck.push(0);
+            }
+            myCardNum = 0;
+            dearerCardNum = 0;
+            playerCardsPointArray = [];
+            dearerCardsPointArray = [];
+            moveCheck = true;
+            document.querySelector('#point').textContent = point;
+            document.querySelector('#my_card').textContent = "";
+            document.querySelector('#dearer_card').textContent = "";
+            document.querySelector('#check_win').textContent = "";
+            next.style.display = "none";
+            start();
+        }
+        function start() {
+            dearerHandOutCards();
+            HandOutCard();
+            dearerHandOutCards();
+            HandOutCard();
+        }
+        function end() {
+            deckCheck();
+            next.style.display = "block";
+        }
+        function checkOutPoints(pointList) {
+            let allPoint = 0;
+            let allPoint2 = 0;
+            let allPointCheck = false;
+            let allPoint2Check = false;
+            let checkA = true;
+            for (const i of pointList) {
+                allPoint += i;
+                allPoint2 += i;
+                if (i === 1 && checkA) {
+                    allPoint2 += 10;
+                    checkA = false;
+                }
+            }
+            if (allPoint > 21) {
+                allPointCheck = true;
+            }
+            if (allPoint2 > 21) {
+                allPoint2Check = true;
+            }
+            return [allPointCheck, allPoint, allPoint2Check, allPoint2];
+        }
+
+        function HandOutCard() {
+            const myCardElement = document.getElementById("my_card");
+            let myCardArray = randomSelect();
+            let myCardKind = cardKindsChange(myCardArray[0]);
+            myCardElement.insertAdjacentHTML("beforeend", `<div id="my_card_${myCardNum}" class="my_card card"><p>${myCardKind[0]} ${myCardArray[1]}</p></div>`);
+            document.querySelector(`#my_card_${myCardNum++}`).style.color = `${myCardKind[1]}`;
+            let playerPlusPoint = myCardArray[1];
+            if (playerPlusPoint > 10) {
+                playerPlusPoint = 10;
+            }
+            playerCardsPointArray.push(playerPlusPoint);
+            if (checkOutPoints(playerCardsPointArray)[0]) {
+                moveCheck=false;
+                winPrint(false);
+            }
+        }
+        function cardKindsChange(num) {
+            let cardKinds;
+            let cardColor;
+            switch (num) {
+                case 1:
+                    cardKinds = "♥";
+                    cardColor = "red";
+                    break;
+                case 2:
+                    cardKinds = "♦";
+                    cardColor = "red";
+                    break;
+                case 3:
+                    cardKinds = "♠";
+                    cardColor = "black";
+                    break;
+                case 4:
+                    cardKinds = "♣";
+                    cardColor = "black";
+                    break;
+                default:
+            }
+            return [cardKinds, cardColor];
+        }
+        function randomSelect() {
+            let cardSelectIndex;
+            let cardSelect;
+            while (true) {
+                cardSelectIndex = Math.floor(Math.random() * 52);
+                cardSelect = cardList[cardSelectIndex];
+                if (cardCheck[cardSelectIndex] === 0) {
+                    cardCheck[cardSelectIndex] = 1;
+                    break;
+                }
+            }
+            return cardSelect;
+        }
+
+
+        function dearerStart() {
+            let dearerPointCheckArray;
+            let playerPointCheckArray;
+            while (true) {
+                dearerPointCheckArray = checkOutPoints(dearerCardsPointArray);
+                playerPointCheckArray = checkOutPoints(playerCardsPointArray);
+                if (pointArrayCheck()) {
+                    break;
+                }
+                if (dearerPointCheckArray[3] >= 17 && dearerPointCheckArray[3] <= 21) {
+                    break;
+                } else if (dearerPointCheckArray[1] > 17) {
+                    break;
+                } else {
+                    dearerHandOutCards();
+                }
+            }
+
+            if (dearerPointCheckArray[0]) {
+                winPrint(true);
+            } else {
+                winCheck();
+            }
+
+        }
+        function pointArrayCheck() {
+            let dearerPointCheckArray = checkOutPoints(dearerCardsPointArray);
+            let playerPointCheckArray = checkOutPoints(playerCardsPointArray);
+            let playerPointCheck = playerPointCheckArray[1];
+            let dearerPointCheck = dearerPointCheckArray[1];
+            if (!playerPointCheckArray[2]) {
+                playerPointCheck = playerPointCheckArray[3];
+            }
+            if (!dearerPointCheckArray[2]) {
+                dearerPointCheck = dearerPointCheckArray[3];
+            }
+            if (playerPointCheck < dearerPointCheck) {
+                return true;
+            } else {
+                return false;
+            }
+
+        }
+        function dearerHandOutCards() {
+            const dearerCardElement = document.getElementById("dearer_card");
+            let dearerCardArray = randomSelect();
+            let dearerCardKind = cardKindsChange(dearerCardArray[0]);
+            dearerCardElement.insertAdjacentHTML("beforeend", `<div id="dearer_card_${dearerCardNum}" class="dearer_card card"><p>${dearerCardKind[0]} ${dearerCardArray[1]}</p></div>`);
+            document.querySelector(`#dearer_card_${dearerCardNum++}`).style.color = `${dearerCardKind[1]}`;
+            let dearerPlusPoint = dearerCardArray[1];
+            if (dearerPlusPoint > 10) {
+                dearerPlusPoint = 10;
+            }
+            dearerCardsPointArray.push(dearerPlusPoint);
+        }
+
+        function winCheck(playerPoint) {
+            let playerPointCheckArray = checkOutPoints(playerCardsPointArray);
+            let playerPointCheck;
+            if (!playerPointCheckArray[2]) {
+                playerPointCheck = playerPointCheckArray[3];
+            } else if (!playerPointCheckArray[0]) {
+                playerPointCheck = playerPointCheckArray[1];
+            } else {
+                playerPointCheck = 0;
+            }
+
+            let dearerPointCheckArray = checkOutPoints(dearerCardsPointArray);
+            let dearerPointCheck;
+            if (!dearerPointCheckArray[2]) {
+                dearerPointCheck = dearerPointCheckArray[3];
+            } else if (!dearerPointCheckArray[0]) {
+                dearerPointCheckArray = dearerPointCheckArray[1];
+            } else {
+                dearerPointCheck = 1;
+            }
+
+            console.log(playerPointCheck)
+            console.log(dearerPointCheck)
+            console.log(playerPointCheckArray)
+            console.log(dearerPointCheckArray)
+            if (playerPointCheck > dearerPointCheck) {
+                winPrint(true);
+            } else if (playerPointCheck < dearerPointCheck) {
+                winPrint(false);
+            } else {
+                const checkWin = document.getElementById("check_win");
+                checkWin.textContent = "draw";
+                checkWin.style.color = "gray";
+                end();
+            }
+
+
+        }
+        function winPrint(winnerCheck) {
+            moveCheck = false;
+            const checkWin = document.getElementById("check_win");
+            if (winnerCheck) {
+                checkWin.textContent = "Win";
+                checkWin.style.color = "red";
+                point += pointReturn;
+            } else if (!winnerCheck) {
+                checkWin.textContent = "Lose";
+                checkWin.style.color = "blue";
+                point -= pointReturn;
+            }
+            document.getElementById("point").textContent = point;
+            end();
+        }
+
+        function deckCheck() {
+            let checkUsedCount = 0;
+            for (const i of cardCheck) {
+                if (i === 0) {
+
+                    break;
+                }
+            }
+            if (checkUsedCount > 26) {
+                deckReset();
+            }
+        }
+        function deckReset() {
+            for (const i of cardCheck) {
+                i = 0;
+            }
+        }
+    </script>
+</body>
+
+</html>
